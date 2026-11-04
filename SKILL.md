@@ -158,6 +158,8 @@ references/defect-patterns.md  八类高频病灶 + 判别要点
 scripts/scan.py                机器扫描
 scripts/render.py              页面渲染（目视复核用）
 scripts/build.py               data.json → HTML 报告 + Excel 清单
+scripts/check_env.py           环境自检
+scripts/_common.py             共享的页码偏移推断（scan/render 共用）
 assets/terms.json              术语变体表（按文档品类裁剪后使用）
 assets/report-data.example.json 数据模板（照此填审校结果）
 assets/report-template.html    报告骨架（由 build.py 调用，不直接编辑）
