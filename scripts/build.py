@@ -48,6 +48,7 @@ COLS = [
     ('原文摘录', 42, 'quote'),
     ('问题说明', 52, 'issue'),
     ('修改建议', 42, 'fix'),
+    ('复核证据', 20, 'evidence'),
 ]
 
 
@@ -62,6 +63,26 @@ def est_height(values, widths):
         if n:
             lines = max(lines, -(-n // max(w - 2, 4)))
     return min(max(lines * 15 + 4, 20), 200)
+
+
+EVIDENCE_CATS = ('版式', '编号', '断句', '表格对齐', '图注', '目录', '格式')
+
+
+def warn_evidence(items):
+    """版式/结构类条目缺复核证据时只打印警告，不阻断出件。"""
+    need = [it for it in items
+            if any(k in str(it.get('cat', '')) for k in EVIDENCE_CATS)]
+    missing = [it for it in need if not str(it.get('evidence', '')).strip()]
+    if missing:
+        print('警告：%d 条版式/结构类条目缺少复核证据（evidence），已照常出件，请在自评中标“存疑”。'
+              % len(missing))
+        for it in missing[:10]:
+            print('  - %s  %s' % (it.get('loc', ''), it.get('cat', '')))
+        if len(missing) > 10:
+            print('  … 其余 %d 条见 data.json' % (len(missing) - 10))
+    elif need:
+        print('复核证据：%d 条版式/结构类条目均已填写。' % len(need))
+    return len(missing)
 
 
 # ---------------- Excel ----------------
@@ -96,7 +117,8 @@ def build_xlsx(data, path):
     r = hr + 1
     for i, it in enumerate(items, start=1):
         row = [i, it.get('ch', ''), it.get('sev', ''), it.get('cat', ''),
-               it.get('loc', ''), it.get('quote', ''), it.get('issue', ''), it.get('fix', '')]
+               it.get('loc', ''), it.get('quote', ''), it.get('issue', ''),
+               it.get('fix', ''), it.get('evidence', '')]
         if it.get('flag'):
             row[6] = '%s（%s）' % (row[6], it['flag'])
         for j, v in enumerate(row, start=1):
@@ -112,7 +134,7 @@ def build_xlsx(data, path):
 
     ws.freeze_panes = 'A3'
     if r > hr + 1:
-        ws.auto_filter.ref = 'A%d:H%d' % (hr, r - 1)
+        ws.auto_filter.ref = 'A%d:%s%d' % (hr, get_column_letter(len(COLS)), r - 1)
     ws.page_setup.orientation = 'landscape'
     ws.page_setup.fitToWidth = 1
     ws.sheet_properties.pageSetUpPr.fitToPage = True
@@ -222,6 +244,7 @@ def main():
         data = json.load(f)
 
     meta = data.get('meta', {})
+    warn_evidence(data.get('items', []))
     if meta.get('stage') not in ('final', 'interim'):
         print('警告：meta.stage=%r 不合法（应为 final 或 interim），已按"中途版"处理。' % meta.get('stage'))
     outdir = args.outdir or os.path.dirname(os.path.abspath(args.data))

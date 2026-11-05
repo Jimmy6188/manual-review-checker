@@ -1,0 +1,36 @@
+manual-review-checker  v1.1
+build-date: 2026-11-05
+source: 用户级技能正本（含 11-04 P1/P2/P3 修复与 11-05 四轮改动）
+supersedes: manual-review-checker-v1.0.zip (2026-10-30)
+
+主要变更（相对 v1.0）:
+- 第 0 步基准资料问句扩展为「除《术语表》《规格表》外，是否还有其他可用作判定基准的资料」
+- 词表改由工作目录 terms.json 提供；assets/terms.json 改为只读空模板
+- 新增 evidence 复核证据字段、scripts/validate.py 摘录校验、HTML 单文件自包含
+- scan.py 词表解耦、_hit 子串匹配、check_toc 目录页排除
+- HTML 输出转义（P1）、页码偏移统一 _common.py（P2/P3）
+- INSTALL-FOR-AGENT.md 改为安装/升级两用：备份移出技能目录、自定义词表迁移、VERSION 校验
+
+升级验收判据:
+1. 技能目录下只有一个 name: manual-review-checker 的 SKILL.md
+2. scripts/ 下 6 个 .py 齐全（含 validate.py、_common.py）
+3. python scripts/check_env.py 返回 0
+4. 新开对话第 0 步问句含「除《术语表》《规格表》外…」并提到工作目录 terms.json
+5. 同事原有自定义词表已迁到工作目录，未被空模板覆盖
+
+sha256 前 16 位（校验除 VERSION 外的全部文件）:
+  INSTALL-FOR-AGENT.md                         a55dea2b8f0a7019
+  README.md                                    8fe6fb2950e943cc
+  SKILL.md                                     603496f9db8d0334
+  assets/report-data.example.json              85803d7320f942fb
+  assets/report-template.html                  776bc50cd019d1cf
+  assets/terms.json                            611942fe2a9946f3
+  references/checklist.md                      adc6eb97886724bc
+  references/defect-patterns.md                31cadb620da762af
+  scripts/_common.py                           409ed88a502cf9b8
+  scripts/build.py                             987fd427d231d8ed
+  scripts/check_env.py                         7dcf6d64828b6b96
+  scripts/render.py                            84b87bf532f9ae72
+  scripts/scan.py                              d062e60825755a12
+  scripts/validate.py                          d891808af26c5418
+  安装与使用说明.md                                   11a1d600486f27f7

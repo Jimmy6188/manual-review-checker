@@ -34,7 +34,7 @@ pip install pymupdf openpyxl -i https://mirrors.aliyun.com/pypi/simple
 python scripts/check_env.py
 ```
 
-2. 机器扫描 PDF（输出六类线索：页码偏移、目录偏差、占位、空页、术语变体、疑似阶段）：
+2. 机器扫描 PDF（输出六类线索：页码偏移、目录偏差、占位、空页、术语变体、疑似阶段）。项目词表 `terms.json` 放当前工作目录，未提供则跳过术语类扫描：
 
 ```bash
 python scripts/scan.py <file.pdf> -o review.json
@@ -63,9 +63,10 @@ references/defect-patterns.md   八类高频病灶 + 判别要点
 scripts/scan.py                 机器扫描
 scripts/render.py               页面渲染（目视复核用）
 scripts/build.py                data.json → HTML 报告 + Excel 清单
+scripts/validate.py             data.json 摘录核对（三态，只警告）
 scripts/check_env.py            环境自检
 scripts/_common.py              共享的页码偏移推断
-assets/terms.json               术语变体表（按文档品类裁剪）
+assets/terms.json               只读示例模板（项目词表放工作目录）
 assets/report-data.example.json 数据模板
 assets/report-template.html     报告骨架（由 build.py 调用）
 ```
@@ -75,5 +76,5 @@ assets/report-template.html     报告骨架（由 build.py 调用）
 审校前需确认三件事（详见 `SKILL.md` 第 0 步）：
 
 1. 文档阶段——终稿（付印 / 交客户）还是中途版（资料未齐）。
-2. 基准资料——有无《术语表》《规格表》。
+2. 基准资料——除《术语表》《规格表》外，有无其他可用作判定基准的资料（认证文件／整车参数表、供应商数据、客户规格清单等）。
 3. 对照版本——有无外文原版 / 上一版可对照。

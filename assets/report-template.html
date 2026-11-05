@@ -66,6 +66,7 @@ td.fix{min-width:220px;color:var(--ink2)}
   border-radius:3px;padding:1px 6px;white-space:nowrap;background:#fbfcfd}
 .flag{display:inline-block;margin-left:6px;font-size:11px;color:#8a5a00;background:#fff6e0;
   border:1px solid #f0dcae;border-radius:3px;padding:0 5px}
+.evi{margin-top:4px;font-size:11.5px;color:var(--ink3);line-height:1.5}
 .ok{padding:18px 20px;color:#2f7d4f;background:#f2faf5;font-size:13px}
 section.sum{background:var(--panel);border:1px solid var(--line);border-radius:10px;margin-bottom:16px;overflow:hidden}
 section.sum>h2{margin:0;padding:16px 20px;font-size:15px;border-bottom:1px solid var(--line2);background:#fbfcfd}
@@ -156,7 +157,7 @@ footer{color:var(--ink3);font-size:12px;text-align:center;padding:24px 0 0}
   </div>
 </section>
 
-<footer>本报告仅列问题与修改建议，未改动原文件；涉及具体数值的修改建议均标注"需人工确认"。</footer>
+<footer>本报告仅列问题与修改建议，未改动原文件；具体数值请以登记的基准资料核对；无基准的条目标注"需人工确认"。</footer>
 </div>
 
 <script>
@@ -164,7 +165,9 @@ footer{color:var(--ink3);font-size:12px;text-align:center;padding:24px 0 0}
    由 build.py 注入；也可手工编辑后直接打开本文件预览。
    字段: ch 章节 | sev 严重程度 | cat 问题类别 | loc 原文位置
          quote 原文摘录 | issue 问题说明 | fix 修改建议 | flag 可选标记
+         evidence 可选复核证据（渲染印刷页码或图片相对路径）
    sev 取 严重 / 中等 / 轻微 / 待补；待补 仅在 meta.stage = "interim" 时使用
+   fix 涉及具体数值时：有可追溯基准则填值并标出处，无基准写“需人工确认”。
    meta.emptyChapters 必须列出“未发现问题”的章节，否则该章不会出现在报告中
 */
 const REPORT = /*BEGIN*/{
@@ -175,12 +178,12 @@ const REPORT = /*BEGIN*/{
   "version": "2026 年 10 月 第一版",
   "date": "2026-10-29",
   "stage": "interim",
-  "baseline": "无《术语表》《规格表》",
+  "baseline": "无《术语表》《规格表》，无其他基准资料",
   "compare": "无外文原版",
   "emptyChapters": ["1. 车辆信息"]
  },
  "items": [
-  {"ch":"5. 仪表和控制功能","sev":"待补","cat":"数据缺失（占位）","loc":"第 35 页 / 5.13","quote":"燃油储备量：　XXL","issue":"示例：燃油储备量未填，中途版待客户提供。","fix":"填入实测值。","flag":""},
+  {"ch":"5. 仪表和控制功能","sev":"待补","cat":"数据缺失（占位）","loc":"第 35 页 / 5.13","quote":"燃油储备量：　XXL","issue":"示例：燃油储备量未填，中途版待客户提供。","fix":"填入实测值。","flag":"","evidence":"示例：已渲染 p35 核对"},
   {"ch":"5. 仪表和控制功能","sev":"中等","cat":"文字差错","loc":"第 23 页 / 5.2.3","quote":"当检测到的电池电压小于 12.3V 或大 15V 时","issue":"示例：漏“于”字，阈值上限表述不清。","fix":"改为“或大于 15V”。","flag":""},
   {"ch":"8. 安全驾驶","sev":"严重","cat":"逻辑与内容矛盾","loc":"第 72 页 / 8.7","quote":"转向角度应尽量大，转向角度越小，翻车的可能性越大。","issue":"示例：与第 11 页“幅度过大或过快都可能导致翻车”相反。","fix":"改为“尽量减小转向角度”。","flag":""},
   {"ch":"9. 维护保养","sev":"轻微","cat":"术语与用语一致性","loc":"第 101 页 / 9.9","quote":"散热器风扇会根据散热器中冷却水的温度自动打开或关闭。","issue":"示例：全篇用“冷却液”，此处为“冷却水”。","fix":"改为“冷却液”。","flag":""}
@@ -261,7 +264,7 @@ function render(){
       return;
     }
     const rows = all.filter(o=>(sevF==='all'||o.sev===sevF)
-      && (!q || (o.quote+o.issue+o.fix+o.loc+o.cat).toLowerCase().includes(q)));
+      && (!q || (o.quote+o.issue+o.fix+o.loc+o.cat+(o.evidence||'')).toLowerCase().includes(q)));
     if(!rows.length) return;
     html += `<section class="ch"><h2>${esc(ch)}<span class="cnt">${rows.length} 条</span></h2>
       <div class="tw"><table><thead><tr>
@@ -272,7 +275,7 @@ function render(){
       html += `<tr><td class="id">${o.no}</td>
         <td><span class="sev ${SEVCLS[o.sev]||'s3'}">${esc(o.sev)}</span></td>
         <td><span class="cat">${esc(o.cat)}</span></td>
-        <td class="loc">${esc(o.loc)}</td>
+        <td class="loc">${esc(o.loc)}${o.evidence?`<div class="evi">复核：${esc(o.evidence)}</div>`:''}</td>
         <td class="quote">${esc(o.quote)}${o.flag?`<span class="flag">${esc(o.flag)}</span>`:''}</td>
         <td class="issue">${esc(o.issue)}</td><td class="fix">${esc(o.fix)}</td></tr>`;
     });

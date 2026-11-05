@@ -3,8 +3,9 @@
 """scan.py — 技术文档审校的机器扫描（只提供线索，不替代人工判断）
 
 用法:
-    python scan.py <file.pdf> [-o review.json] [--terms assets/terms.json]
+    python scan.py <file.pdf> [-o review.json] [--terms terms.json]
 
+默认查当前工作目录 terms.json；未提供则跳过术语与残留词两类扫描。
 输出六类线索:
     1. 印刷页码偏移（PDF 页序 - 页脚数字）
     2. 目录条目与正文实际标题页的偏差
@@ -37,29 +38,66 @@ def norm(s):
     return re.sub(r'[\s\u3000\ufffc\u00a0]+', '', s)
 
 
-def check_toc(doc, pages, offset):
-    """目录条目 vs 正文首次出现页。返回偏差列表（页码均为印刷页码）。"""
+TOC_WINDOW = 10  # 以书签目标页为中心的搜索窗口（PDF 页序）
+
+
+def find_toc_pages(normed, toc, first_pdf_page, min_hits=3):
+    """把「第一个书签目标页之前、且含 >= min_hits 个书签标题」的页视为目录页。"""
+    keys = [norm(t) for _, t, _ in toc if len(norm(t)) >= 3]
+    if not keys:
+        return set()
+    limit = min(max(first_pdf_page - 1, 0), len(normed))
+    out = set()
+    for i in range(limit):
+        if sum(1 for k in keys if k in normed[i]) >= min_hits:
+            out.add(i)
+    return out
+
+
+def check_toc(doc, pages, offset, window=TOC_WINDOW):
+    """目录条目 vs 正文标题页。
+
+    搜索窗口以 PDF 书签目标页为中心，并显式排除目录页自身；
+    正文增删页导致的 1-2 页偏移仍能检出。
+    返回 (真偏差列表, 疑似匹配失败列表)，页码均为印刷页码。
+    """
     toc = doc.get_toc()
     normed = [norm(t) for t in pages]
     start = max(offset, 0)
-    out = []
+    first_pdf_page = min((p for _, _, p in toc), default=1)
+    toc_pages = find_toc_pages(normed, toc, first_pdf_page)
+    out, suspect = [], []
     for level, title, pdf_page in toc:
         key = norm(title)
         if len(key) < 3:
             continue
+        lo = max(start, pdf_page - 1 - window)
+        hi = min(len(normed), pdf_page + window)
         actual = None
-        for i in range(start, len(normed)):
+        for i in range(lo, hi):
+            if i in toc_pages:
+                continue
             if key in normed[i]:
                 actual = i + 1
                 break
-        if actual and actual != pdf_page:
-            out.append({
-                'title': title.replace('\t', ' ').strip(),
-                'level': level,
-                'toc_page': pdf_page - offset,
-                'actual_page': actual - offset,
-            })
-    return out
+        rec = {
+            'title': title.replace('\t', ' ').strip(),
+            'level': level,
+            'toc_page': pdf_page - offset,
+            'actual_page': (actual - offset) if actual else None,
+        }
+        if actual is None:
+            suspect.append(dict(rec, reason='标题未在书签页附近找到'))
+        elif actual != pdf_page:
+            out.append(rec)
+    # 兜底：命中集中在 1-2 页、而目录页码跨度很大 -> 标题匹配失败，不是真偏差
+    if out:
+        actuals = {b['actual_page'] for b in out}
+        span = max(b['toc_page'] for b in out) - min(b['toc_page'] for b in out)
+        if len(actuals) <= 2 and span > 10:
+            suspect.extend(dict(b, reason='命中集中于少数页，疑似标题匹配失败') for b in out)
+            out = []
+    return out, suspect
 
 
 def scan_placeholders(pages, offset):
@@ -103,9 +141,14 @@ def _is_cjk(c):
     return '\u4e00' <= c <= '\u9fff'
 
 
-def _hit(text, word):
-    """word 命中判定：纯汉字词须前后非汉字（避免"制动"命中"驻车制动"）；含字母数字的缩写保持子串匹配。"""
-    if not all(_is_cjk(c) for c in word):
+def _hit(text, word, boundary=False):
+    """默认按子串匹配，避免「制动系统」「刹车助力」等合成词漏检。
+
+    词表某组/某词设 "boundary": true 时启用严格边界：
+    纯汉字词须前后都非汉字（避免「制动」命中「驻车制动」）；
+    含字母数字的缩写始终按子串匹配。
+    """
+    if not boundary or not all(_is_cjk(c) for c in word):
         return word in text
     for m in re.finditer(re.escape(word), text):
         s, e = m.start(), m.end()
@@ -116,14 +159,16 @@ def _hit(text, word):
 
 def scan_terms(pages, offset, terms_path):
     if not terms_path or not os.path.exists(terms_path):
-        return [], 'terms.json 未找到，跳过术语扫描'
+        return [], []
     with open(terms_path, encoding='utf-8') as f:
         cfg = json.load(f)
     results = []
     for grp in cfg.get('synonym_groups', []):
         hits = {}
+        boundary = grp.get('boundary', False)
         for v in grp['variants']:
-            pg = [i + 1 - offset for i, t in enumerate(pages) if _hit(t, v) and i + 1 - offset >= 1]
+            pg = [i + 1 - offset for i, t in enumerate(pages)
+                  if _hit(t, v, boundary) and i + 1 - offset >= 1]
             if pg:
                 hits[v] = pg
         if len(hits) >= 2:
@@ -131,7 +176,9 @@ def scan_terms(pages, offset, terms_path):
     residue = []
     for item in cfg.get('residue_words', []):
         w = item['word']
-        pg = [i + 1 - offset for i, t in enumerate(pages) if _hit(t, w) and i + 1 - offset >= 1]
+        boundary = item.get('boundary', False)
+        pg = [i + 1 - offset for i, t in enumerate(pages)
+              if _hit(t, w, boundary) and i + 1 - offset >= 1]
         if pg:
             residue.append({'word': w, 'hint': item.get('hint', ''), 'pages': pg})
     return results, residue
@@ -141,8 +188,8 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument('pdf')
     ap.add_argument('-o', '--out', default='review.json')
-    ap.add_argument('--terms', default=os.path.join(
-        os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'assets', 'terms.json'))
+    ap.add_argument('--terms', default=os.path.join(os.getcwd(), 'terms.json'),
+                    help='项目词表路径（默认当前工作目录 terms.json）')
     args = ap.parse_args()
 
     doc = pymupdf.open(args.pdf)
@@ -158,7 +205,10 @@ def main():
         tail_blank += 1
     body_pages = max(total - offset - tail_blank, 1)
 
-    toc_bad = check_toc(doc, pages, offset)
+    if not os.path.exists(args.terms):
+        print('未提供词表 %s，跳过术语变体与跨品类残留扫描（可用 --terms 指定项目词表）。'
+              % args.terms)
+    toc_bad, toc_suspect = check_toc(doc, pages, offset)
     ph = scan_placeholders(pages, offset)
     has_image = [len(p.get_images()) > 0 for p in doc]
     blank, short = scan_blank(pages, offset, body_pages, has_image)
@@ -175,6 +225,8 @@ def main():
         'printed_range': '1-%d' % body_pages,
         'toc_mismatch': toc_bad,
         'toc_mismatch_count': len(toc_bad),
+        'toc_mismatch_suspect': toc_suspect,
+        'toc_suspect_count': len(toc_suspect),
         'placeholders': {'page_count': len(ph), 'density': round(density, 3), 'by_page': ph},
         'blank_pages': blank,
         'short_pages': short,
@@ -190,6 +242,8 @@ def main():
     print('PDF 页数: %d | 印刷页码偏移: %d（%d 页投票）| 正文页码: 1-%d'
           % (total, offset, votes, body_pages))
     print('目录偏差: %d 条' % len(toc_bad))
+    if toc_suspect:
+        print('目录疑似匹配失败: %d 条（已单列，不计入偏差）' % len(toc_suspect))
     for b in toc_bad[:8]:
         print('   %s  目录 %s → 实际 %s' % (b['title'][:28], b['toc_page'], b['actual_page']))
     if len(toc_bad) > 8:
