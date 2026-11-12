@@ -10,6 +10,7 @@
   --line:#e3e6ea; --line2:#eef0f3;
   --s1:#c0392b; --s1bg:#fdecea; --s2:#b7791f; --s2bg:#fdf5e6;
   --s3:#4a6fa5; --s3bg:#eef3fa; --s4:#6b7280; --s4bg:#f1f2f4;
+  --s5:#6b5b95; --s5bg:#f0ebf7;
   --accent:#2c3e50;
 }
 *{box-sizing:border-box}
@@ -22,6 +23,7 @@ header.top .sub{color:var(--ink3);font-size:13px}
 .stage{display:inline-block;margin-top:10px;padding:3px 10px;border-radius:4px;font-size:12px;font-weight:600}
 .stage.interim{background:#fff6e0;color:#8a5a00;border:1px solid #f0dcae}
 .stage.final{background:#eaf5ee;color:#2f7d4f;border:1px solid #cbe5d6}
+.stage.trans{background:#f0ebf7;color:#6b5b95;border:1px solid #ddd3ef}
 .meta{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:10px 24px;margin-top:16px;
   padding-top:16px;border-top:1px solid var(--line2);font-size:13px}
 .meta div span{display:block;color:var(--ink3);font-size:12px;margin-bottom:2px}
@@ -31,7 +33,7 @@ header.top .sub{color:var(--ink3);font-size:13px}
 .kpi .n{font-size:30px;font-weight:700;line-height:1.1;font-variant-numeric:tabular-nums}
 .kpi .l{font-size:12px;color:var(--ink3);margin-top:4px}
 .kpi.s1 .n{color:var(--s1)} .kpi.s2 .n{color:var(--s2)}
-.kpi.s3 .n{color:var(--s3)} .kpi.s4 .n{color:var(--s4)}
+.kpi.s3 .n{color:var(--s3)} .kpi.s4 .n{color:var(--s4)} .kpi.s5 .n{color:var(--s5)}
 .toolbar{position:sticky;top:0;z-index:20;background:rgba(246,247,249,.94);backdrop-filter:blur(8px);
   border-bottom:1px solid var(--line);padding:10px 0;margin-bottom:20px;display:flex;gap:8px;flex-wrap:wrap;align-items:center}
 .toolbar .lbl{font-size:12px;color:var(--ink3);margin-right:2px}
@@ -44,6 +46,7 @@ header.top .sub{color:var(--ink3);font-size:13px}
 select.sel{border:1px solid var(--line);background:var(--panel);border-radius:999px;padding:6px 12px;
   font-size:13px;font-family:inherit;color:var(--ink2);cursor:pointer}
 section.ch{background:var(--panel);border:1px solid var(--line);border-radius:10px;margin-bottom:16px;overflow:hidden}
+html{overflow-anchor:none}
 section.ch>h2{margin:0;padding:14px 20px;font-size:15px;font-weight:600;border-bottom:1px solid var(--line2);
   display:flex;align-items:center;gap:10px;background:#fbfcfd}
 section.ch>h2 .cnt{margin-left:auto;font-weight:400;font-size:12px;color:var(--ink3)}
@@ -62,10 +65,15 @@ td.fix{min-width:220px;color:var(--ink2)}
 .sev{display:inline-block;padding:2px 9px;border-radius:4px;font-size:12px;font-weight:600;white-space:nowrap}
 .sev.s1{background:var(--s1bg);color:var(--s1)} .sev.s2{background:var(--s2bg);color:var(--s2)}
 .sev.s3{background:var(--s3bg);color:var(--s3)} .sev.s4{background:var(--s4bg);color:var(--s4)}
+.sev.s5{background:var(--s5bg);color:var(--s5)}
+td.rule{width:56px;color:var(--ink3);font-size:11.5px;white-space:nowrap;font-variant-numeric:tabular-nums}
+td.src{min-width:180px;max-width:260px;font-size:12.5px;background:#fbfcf9;border-left:2px solid #e4e8dd;padding-left:10px}
+td.srcloc{min-width:100px;color:var(--ink3);font-size:12.5px}
 .cat{display:inline-block;font-size:11.5px;color:var(--ink3);border:1px solid var(--line);
   border-radius:3px;padding:1px 6px;white-space:nowrap;background:#fbfcfd}
 .flag{display:inline-block;margin-left:6px;font-size:11px;color:#8a5a00;background:#fff6e0;
   border:1px solid #f0dcae;border-radius:3px;padding:0 5px}
+.evi{margin-top:4px;font-size:11.5px;color:var(--ink3);line-height:1.5}
 .ok{padding:18px 20px;color:#2f7d4f;background:#f2faf5;font-size:13px}
 section.sum{background:var(--panel);border:1px solid var(--line);border-radius:10px;margin-bottom:16px;overflow:hidden}
 section.sum>h2{margin:0;padding:16px 20px;font-size:15px;border-bottom:1px solid var(--line2);background:#fbfcfd}
@@ -112,6 +120,7 @@ footer{color:var(--ink3);font-size:12px;text-align:center;padding:24px 0 0}
   <button class="btn" data-sev="中等">中等</button>
   <button class="btn" data-sev="轻微">轻微</button>
   <button class="btn" data-sev="待补">待补</button>
+  <button class="btn" data-sev="偏离" id="btnDev" style="display:none">偏离</button>
   <span class="lbl" style="margin-left:10px">章节</span>
   <select class="sel" id="chSel"><option value="all">全部章节</option></select>
   <input class="search" id="q" type="search" placeholder="搜索原文、说明、页码…">
@@ -129,6 +138,7 @@ footer{color:var(--ink3);font-size:12px;text-align:center;padding:24px 0 0}
     <h3 class="sec">二、出现频率最高的类型</h3>
     <p style="margin:0 0 8px;font-size:13.5px" id="topCatLine">—</p>
     <div class="note" id="stageNote"></div>
+    <div id="steBlock" style="display:none"></div>
 
     <h3 class="sec">三、待补资料清单（等客户提供后即可消除）</h3>
     <div class="tw"><table>
@@ -140,14 +150,24 @@ footer{color:var(--ink3);font-size:12px;text-align:center;padding:24px 0 0}
     <h3 class="sec">四、最需优先处理的 3 个问题</h3>
     <div class="top3" id="top3"></div>
 
-    <h3 class="sec">五、疑似问题清单（需人工复核，不建议直接改稿）</h3>
+    <h3 class="sec" id="srcSec" style="display:none">五、源文侧问题（改定稿用，不计入译文三级统计）</h3>
+    <div id="srcBlock" style="display:none">
+      <div class="note" id="srcNote"></div>
+      <div class="tw"><table>
+        <thead><tr><th style="width:44px">序号</th><th style="width:132px">源文位置</th>
+        <th style="width:72px">处理</th><th style="width:240px">源文摘录</th><th>问题与建议</th></tr></thead>
+        <tbody id="srcIssues"></tbody>
+      </table></div>
+    </div>
+
+    <h3 class="sec">六、疑似问题清单（需人工复核，不建议直接改稿）</h3>
     <div class="tw"><table>
       <thead><tr><th style="width:44px">序号</th><th style="width:130px">原文位置</th>
       <th style="width:250px">原文摘录</th><th>存疑原因与复核建议</th></tr></thead>
       <tbody id="suspects"></tbody>
     </table></div>
 
-    <h3 class="sec">六、验收标准自评</h3>
+    <h3 class="sec">七、验收标准自评</h3>
     <div class="tw"><table>
       <thead><tr><th style="width:44px">#</th><th style="width:46%">验收标准</th>
       <th style="width:70px">结论</th><th>说明</th></tr></thead>
@@ -156,7 +176,7 @@ footer{color:var(--ink3);font-size:12px;text-align:center;padding:24px 0 0}
   </div>
 </section>
 
-<footer>本报告仅列问题与修改建议，未改动原文件；涉及具体数值的修改建议均标注"需人工确认"。</footer>
+<footer>本报告仅列问题与修改建议，未改动原文件；具体数值请以登记的基准资料核对；无基准的条目标注"需人工确认"。</footer>
 </div>
 
 <script>
@@ -164,8 +184,16 @@ footer{color:var(--ink3);font-size:12px;text-align:center;padding:24px 0 0}
    由 build.py 注入；也可手工编辑后直接打开本文件预览。
    字段: ch 章节 | sev 严重程度 | cat 问题类别 | loc 原文位置
          quote 原文摘录 | issue 问题说明 | fix 修改建议 | flag 可选标记
-   sev 取 严重 / 中等 / 轻微 / 待补；待补 仅在 meta.stage = "interim" 时使用
+         evidence 可选复核证据（渲染印刷页码或图片相对路径）
+         翻译版另加: srcLoc 源文位置 | srcQuote 源文原文 | rule 规则编号（L1–L8 / S1–S6）
+   sev 取 严重 / 中等 / 轻微 / 待补 / 偏离；待补 仅在 meta.stage = "interim" 时使用
+   偏离 仅在 meta.reviewMode = "translation" 时使用，不占三级统计
+   meta.reviewMode 取 "mono"（默认，单语版，语种不限）/ "translation"（译文验收，启用源文对照列）
+   fix 涉及具体数值时：有可追溯基准则填值并标出处，无基准写“需人工确认”。
    meta.emptyChapters 必须列出“未发现问题”的章节，否则该章不会出现在报告中
+   srcIssues 可选：源文侧问题（改定稿用，不进三级统计）。每条 {loc 源文位置, act 处理（必改/建议/待确认）,
+     quote 源文摘录, issue 问题与建议}；非空时自动出现第五节，meta.srcReview 写扫描依据一行。
+   源文侧线索来源：scan.py --lang zh 的占位/空页/目录偏差/字数异常 + 对照中发现的源文笔误。
 */
 const REPORT = /*BEGIN*/{
  "meta": {
@@ -175,12 +203,12 @@ const REPORT = /*BEGIN*/{
   "version": "2026 年 10 月 第一版",
   "date": "2026-10-29",
   "stage": "interim",
-  "baseline": "无《术语表》《规格表》",
+  "baseline": "无《术语表》《规格表》，无其他基准资料",
   "compare": "无外文原版",
   "emptyChapters": ["1. 车辆信息"]
  },
  "items": [
-  {"ch":"5. 仪表和控制功能","sev":"待补","cat":"数据缺失（占位）","loc":"第 35 页 / 5.13","quote":"燃油储备量：　XXL","issue":"示例：燃油储备量未填，中途版待客户提供。","fix":"填入实测值。","flag":""},
+  {"ch":"5. 仪表和控制功能","sev":"待补","cat":"数据缺失（占位）","loc":"第 35 页 / 5.13","quote":"燃油储备量：　XXL","issue":"示例：燃油储备量未填，中途版待客户提供。","fix":"填入实测值。","flag":"","evidence":"示例：已渲染 p35 核对"},
   {"ch":"5. 仪表和控制功能","sev":"中等","cat":"文字差错","loc":"第 23 页 / 5.2.3","quote":"当检测到的电池电压小于 12.3V 或大 15V 时","issue":"示例：漏“于”字，阈值上限表述不清。","fix":"改为“或大于 15V”。","flag":""},
   {"ch":"8. 安全驾驶","sev":"严重","cat":"逻辑与内容矛盾","loc":"第 72 页 / 8.7","quote":"转向角度应尽量大，转向角度越小，翻车的可能性越大。","issue":"示例：与第 11 页“幅度过大或过快都可能导致翻车”相反。","fix":"改为“尽量减小转向角度”。","flag":""},
   {"ch":"9. 维护保养","sev":"轻微","cat":"术语与用语一致性","loc":"第 101 页 / 9.9","quote":"散热器风扇会根据散热器中冷却水的温度自动打开或关闭。","issue":"示例：全篇用“冷却液”，此处为“冷却水”。","fix":"改为“冷却液”。","flag":""}
@@ -208,7 +236,10 @@ const META = REPORT.meta, ITEMS = REPORT.items, TOP3 = REPORT.top3,
       SUSPECTS = REPORT.suspects, ACCEPT = REPORT.accept;
 
 /* ===== 以下为渲染逻辑，一般不改 ===== */
-const SEVCLS = {'严重':'s1','中等':'s2','轻微':'s3','待补':'s4'};
+const SEVCLS = {'严重':'s1','中等':'s2','轻微':'s3','待补':'s4','偏离':'s5'};
+const SRCCLS = {'必改':'s1','建议':'s2','待确认':'s3'};
+const IS_T = META.reviewMode === 'translation';
+const LANGPAIR = `${META.sourceLang||'zh-CN'} → ${META.targetLang||'en-US'}`;
 const ALL = ITEMS.map((it,i)=>Object.assign({no:i+1,flag:''}, it));
 /* 所有进入 innerHTML 的动态字段须经 esc 转义，防止原文摘录中的 < > & 被当标签解析 */
 function esc(s){
@@ -218,25 +249,43 @@ function esc(s){
 }
 
 document.getElementById('h1').textContent = META.title;
-document.getElementById('sub').textContent = '只报告问题与修改建议，不改写原文 · 按检查清单逐章扫描';
+document.getElementById('sub').textContent = IS_T
+  ? `译文验收：${LANGPAIR} · 只报告问题与修改建议，不改写原文 · 每条给出源文依据`
+  : '只报告问题与修改建议，不改写原文 · 按检查清单逐章扫描';
 const isFinal = META.stage === 'final';
 document.getElementById('stageBox').innerHTML =
   `<span class="stage ${isFinal?'final':'interim'}">${isFinal?'终稿':'中途版'}　${
-    isFinal?'占位类问题按严重计':'占位类问题单列“待补”，不计入三级统计'}</span>`;
+    isFinal?'占位类问题按严重计':'占位类问题单列“待补”，不计入三级统计'}</span>`
+  + (IS_T ? ` <span class="stage trans">译文验收　${esc(LANGPAIR)}　${
+      META.translationChain==='via-en'?'二次转译':'直译'}</span>` : '');
 
-document.getElementById('meta').innerHTML = [
+const metaRows = [
   ['受审文件', META.file], ['篇幅', META.pages], ['版本', META.version],
-  ['审校日期', META.date], ['基准资料', META.baseline], ['对照版本', META.compare]
-].map(([k,v])=>`<div><span>${esc(k)}</span><b>${esc(v)}</b></div>`).join('');
+  ['审校日期', META.date]
+];
+if (IS_T) {
+  metaRows.push(['语种', LANGPAIR]);
+  metaRows.push(['译制链条', META.translationChain==='via-en' ? '二次转译（经英文中转）' : '直译（中文源文直译）']);
+  metaRows.push(['STE 判定', META.steMode==='subset' ? '已启用（子集 6 条，仅统计分布）' : '未启用']);
+  metaRows.push(['参数口径', META.unitPolicy==='localize' ? '按目标市场换算' : '与源文逐字一致（不换算）']);
+}
+metaRows.push(['基准资料', META.baseline], ['对照版本', META.compare]);
+document.getElementById('meta').innerHTML = metaRows
+  .map(([k,v])=>`<div><span>${esc(k)}</span><b>${esc(v)}</b></div>`).join('');
 
-const cnt = {严重:0,中等:0,轻微:0,待补:0};
+const cnt = {严重:0,中等:0,轻微:0,待补:0,偏离:0};
 ALL.forEach(o=>{ if(cnt[o.sev]!==undefined) cnt[o.sev]++; });
-document.getElementById('kpis').innerHTML = `
-  <div class="kpi s1"><div class="n">${cnt.严重}</div><div class="l">严重（安全 / 参数 / 逻辑）</div></div>
-  <div class="kpi s2"><div class="n">${cnt.中等}</div><div class="l">中等（术语 / 歧义 / 引用）</div></div>
-  <div class="kpi s3"><div class="n">${cnt.轻微}</div><div class="l">轻微（错别字 / 标点 / 格式）</div></div>
-  <div class="kpi s4"><div class="n">${cnt.待补}</div><div class="l">待补（等资料，不计入三级）</div></div>
-  <div class="kpi"><div class="n">${ALL.length}</div><div class="l">条目合计</div></div>`;
+const kpiRows = [
+  ['s1', cnt.严重, '严重（安全 / 参数 / 逻辑）'],
+  ['s2', cnt.中等, '中等（术语 / 歧义 / 引用）'],
+  ['s3', cnt.轻微, '轻微（错别字 / 标点 / 格式）'],
+  ['s4', cnt.待补, '待补（等资料，不计入三级）']
+];
+if (IS_T) kpiRows.push(['s5', cnt.偏离, '偏离（STE 子集，非错误）']);
+kpiRows.push(['', ALL.length, '条目合计']);
+document.getElementById('kpis').innerHTML = kpiRows
+  .map(([c,n,l])=>`<div class="kpi ${c}"><div class="n">${n}</div><div class="l">${esc(l)}</div></div>`)
+  .join('');
 
 /* 章节下拉（按章节号数值排序，而非 items 出现顺序） */
 const coll = new Intl.Collator('zh-CN', {numeric: true, sensitivity: 'base'});
@@ -261,20 +310,33 @@ function render(){
       return;
     }
     const rows = all.filter(o=>(sevF==='all'||o.sev===sevF)
-      && (!q || (o.quote+o.issue+o.fix+o.loc+o.cat).toLowerCase().includes(q)));
+      && (!q || (o.quote+o.issue+o.fix+o.loc+o.cat+(o.evidence||'')
+                 +(o.srcQuote||'')+(o.srcLoc||'')+(o.rule||'')).toLowerCase().includes(q)));
     if(!rows.length) return;
+    const headRow = IS_T
+      ? `<th style="width:44px">序号</th><th style="width:64px">严重程度</th><th style="width:104px">问题类别</th>
+         <th style="width:52px">规则</th><th style="width:118px">译文位置</th><th style="width:220px">译文摘录</th>
+         <th style="width:104px">源文位置</th><th style="width:200px">源文原文</th>
+         <th>问题说明</th><th style="width:210px">修改建议</th>`
+      : `<th style="width:44px">序号</th><th style="width:66px">严重程度</th><th style="width:118px">问题类别</th>
+         <th style="width:132px">原文位置</th><th style="width:250px">原文摘录</th>
+         <th>问题说明</th><th style="width:240px">修改建议</th>`;
     html += `<section class="ch"><h2>${esc(ch)}<span class="cnt">${rows.length} 条</span></h2>
-      <div class="tw"><table><thead><tr>
-      <th style="width:44px">序号</th><th style="width:66px">严重程度</th><th style="width:118px">问题类别</th>
-      <th style="width:132px">原文位置</th><th style="width:250px">原文摘录</th>
-      <th>问题说明</th><th style="width:240px">修改建议</th></tr></thead><tbody>`;
+      <div class="tw"><table><thead><tr>${headRow}</tr></thead><tbody>`;
     rows.forEach(o=>{
-      html += `<tr><td class="id">${o.no}</td>
-        <td><span class="sev ${SEVCLS[o.sev]||'s3'}">${esc(o.sev)}</span></td>
-        <td><span class="cat">${esc(o.cat)}</span></td>
-        <td class="loc">${esc(o.loc)}</td>
-        <td class="quote">${esc(o.quote)}${o.flag?`<span class="flag">${esc(o.flag)}</span>`:''}</td>
-        <td class="issue">${esc(o.issue)}</td><td class="fix">${esc(o.fix)}</td></tr>`;
+      const sev = `<td><span class="sev ${SEVCLS[o.sev]||'s3'}">${esc(o.sev)}</span></td>`;
+      const cat = `<td><span class="cat">${esc(o.cat)}</span></td>`;
+      const evi = `${esc(o.loc)}${o.evidence?`<div class="evi">复核：${esc(o.evidence)}</div>`:''}`;
+      const qt = `${esc(o.quote)}${o.flag?`<span class="flag">${esc(o.flag)}</span>`:''}`;
+      html += IS_T
+        ? `<tr><td class="id">${o.no}</td>${sev}${cat}
+            <td class="rule">${esc(o.rule||'')}</td>
+            <td class="loc">${evi}</td><td class="quote">${qt}</td>
+            <td class="srcloc">${esc(o.srcLoc||'')}</td><td class="src">${esc(o.srcQuote||'')}</td>
+            <td class="issue">${esc(o.issue)}</td><td class="fix">${esc(o.fix)}</td></tr>`
+        : `<tr><td class="id">${o.no}</td>${sev}${cat}
+            <td class="loc">${evi}</td><td class="quote">${qt}</td>
+            <td class="issue">${esc(o.issue)}</td><td class="fix">${esc(o.fix)}</td></tr>`;
     });
     html += `</tbody></table></div></section>`;
   });
@@ -287,8 +349,9 @@ function bars(el, arr){
     <div class="track"><div class="fill" style="width:${Math.max(a[1]/max*100,2)}%"></div></div>
     <div class="num">${a[1]}</div></div>`).join('');
 }
-bars(document.getElementById('sevBars'),
-  [['严重',cnt.严重],['中等',cnt.中等],['轻微',cnt.轻微],['待补',cnt.待补]]);
+const sevArr = [['严重',cnt.严重],['中等',cnt.中等],['轻微',cnt.轻微],['待补',cnt.待补]];
+if (IS_T) sevArr.push(['偏离',cnt.偏离]);
+bars(document.getElementById('sevBars'), sevArr);
 
 const catMap = {};
 ALL.forEach(o=>{ catMap[o.cat]=(catMap[o.cat]||0)+1; });
@@ -303,6 +366,28 @@ document.getElementById('stageNote').innerHTML = isFinal
   : '本版为中途版：占位与空值共 <b>'+cnt.待补+'</b> 处，属客户尚未提供资料，已单列在第三节，不计入三级统计。'
     + '本版报告的重点应放在<b>不依赖资料即可修正</b>的问题上：术语、逻辑、交叉引用、安全表述、错别字。';
 
+if (IS_T) {
+  document.getElementById('btnDev').style.display = '';
+  const dev = ALL.filter(o=>o.sev==='偏离');
+  const box = document.getElementById('steBlock');
+  box.style.display = '';
+  box.innerHTML = `<h3 class="sec">STE 子集规范偏离（非错误，不占三级统计）</h3>`
+    + (dev.length
+      ? `<div class="tw"><table><thead><tr>
+          <th style="width:44px">序号</th><th style="width:56px">规则</th>
+          <th style="width:130px">译文位置</th><th style="width:260px">译文摘录</th>
+          <th>说明</th></tr></thead><tbody>`
+        + dev.map(o=>`<tr><td class="id">${o.no}</td><td class="rule">${esc(o.rule||'')}</td>
+            <td class="loc">${esc(o.loc)}</td><td class="quote">${esc(o.quote)}</td>
+            <td class="issue">${esc(o.issue)}</td></tr>`).join('')
+        + `</tbody></table></div>
+         <div class="note">判定口径：S1 句长（程序性 ≤20 词 / 描述性 ≤25 词）、S2 段长（≤6 句）、
+         S3 一句一指令、S4 禁名词化、S5 禁多词动词、S6 缩略语首现定义。
+         批准词词典<b>未做</b>校验——Part 2 词典版权归 ASD，需官方 Issue 8 或商业工具方可全量判定。
+         仅当合同明确要求 STE 合规时，本档才升级为中等。</div>`
+      : `<div class="ok">未检出 STE 子集偏离。</div>`);
+}
+
 const pending = ALL.filter(o=>o.sev==='待补');
 document.getElementById('pending').innerHTML = pending.length
   ? pending.map((o,i)=>`<tr><td class="id">B${i+1}</td><td class="loc">${esc(o.loc)}</td>
@@ -313,6 +398,20 @@ document.getElementById('top3').innerHTML = TOP3.map((c,i)=>`<div class="card">
   <div class="rank">${i+1}</div><div><div class="t">${esc(c.t)}</div>
   <div class="d">${esc(c.d)}</div><div class="w">${esc(c.w)}</div></div></div>`).join('');
 
+const SRC = REPORT.srcIssues || [];
+if (SRC.length){
+  document.getElementById('srcSec').style.display='';
+  document.getElementById('srcBlock').style.display='';
+  const sc={}; SRC.forEach(o=>{ const k=o.act||'待确认'; sc[k]=(sc[k]||0)+1; });
+  document.getElementById('srcNote').innerHTML =
+    `共 <b>${SRC.length}</b> 条（${['必改','建议','待确认'].filter(k=>sc[k]).map(k=>k+' '+sc[k]).join(' / ')}）。
+     本节只针对<b>源文（定稿）</b>，不进译文三级统计；由中文编辑回改，译文随源文同步。`
+    + (REPORT.meta && REPORT.meta.srcReview ? `　扫描依据：${esc(REPORT.meta.srcReview)}` : '');
+  document.getElementById('srcIssues').innerHTML = SRC.map((o,i)=>
+    `<tr><td class="id">Z${i+1}</td><td class="loc">${esc(o.loc||'')}</td>
+     <td><span class="sev ${SRCCLS[o.act]||'s3'}">${esc(o.act||'待确认')}</span></td>
+     <td class="quote">${esc(o.quote||'')}</td><td class="issue">${esc(o.issue||'')}</td></tr>`).join('');
+}
 document.getElementById('suspects').innerHTML = SUSPECTS.length
   ? SUSPECTS.map((s,i)=>`<tr><td class="id">S${i+1}</td><td class="loc">${esc(s.loc)}</td>
       <td class="quote">${esc(s.quote)}</td><td class="issue">${esc(s.note)}</td></tr>`).join('')
@@ -324,11 +423,17 @@ document.getElementById('accept').innerHTML = ACCEPT.map(a=>{
     <td><b style="color:${c}">${esc(a.res)}</b></td><td class="issue">${esc(a.note)}</td></tr>`;
 }).join('');
 
+const bar = document.querySelector('.toolbar');
+function scrollToList(){
+  const y = document.getElementById('chapters').getBoundingClientRect().top + window.scrollY - bar.offsetHeight - 8;
+  window.scrollTo({top: Math.max(0, y), behavior:'auto'});
+}
+
 document.querySelectorAll('.btn').forEach(b=>b.addEventListener('click',()=>{
   document.querySelectorAll('.btn').forEach(x=>x.classList.remove('on'));
-  b.classList.add('on'); render();
+  b.classList.add('on'); render(); scrollToList();
 }));
-chSel.addEventListener('change', render);
+chSel.addEventListener('change', ()=>{ render(); scrollToList(); });
 document.getElementById('q').addEventListener('input', render);
 render();
 </script>

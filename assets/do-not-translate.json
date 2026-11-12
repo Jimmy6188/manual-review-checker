@@ -1,0 +1,4 @@
+{
+ "_readme": "不可译清单（只读空模板）。请在运行 scan.py 的工作目录放一份 do-not-translate.json，或用 --dnt 显式指定路径。未提供则跳过该项扫描并在摘要中明示。\n\n用途：登记翻译时不得改动、不得翻译的字符串。译文若出现这些词的变体（被译成中文/英文意译、大小写被改、空格被加），即命中，需人工确认。\n\n字段说明：\n  items[].text     原始字符串，逐字照抄（区分大小写按 caseSensitive 控制）\n  items[].kind     类型：model 车型号 / part 零件号 / cert 认证编号 / menu 软件菜单项 / unit 单位符号 / brand 商标\n  items[].note     备注：该词的官方写法要求，例如「全大写，不拆行」\n  items[].caseSensitive  默认 true；设为 false 时忽略大小写比对\n\n本文件由用户按项目填写；技能本体不预置任何品牌、车型或认证编号。",
+ "items": []
+}

@@ -1,0 +1,220 @@
+{
+ "_说明": "审校数据模板（译文验收版，reviewMode=translation）。与单语版的差别：①meta 必须给 sourceLang / targetLang / translationChain，可选 steMode、unitPolicy、localizeItems；②每条 items 增 srcLoc（源文位置）、srcQuote（源文原文，逐字）、rule（规则编号 L1–L8 / S1–S6）；③sev 多一档“偏离”，仅用于 STE 子集，不占三级统计。unitPolicy 默认 verbatim——译制版数值与单位须与中文源文逐字一致，不做本地化换算；确需换算才填 localize。个别例外项登记在 localizeItems（item/basis/approvedBy），清单外一律按不一致报。翻译版 fix 的规则与单语版相反：有源文作基准，必须给建议译法并标源文页码，数值类只写“改回源文 X”，不得给换算值。本文件为结构示例，数据均为占位，不得当作真实审校结论。",
+ "meta": {
+  "title": "某某车型 使用说明书（英译版）· 审校问题清单",
+  "file": "OM_EN_v1.0.pdf",
+  "pages": "148 页（正文 1–136）",
+  "version": "2026 年 11 月 第一版",
+  "date": "2026-11-12",
+  "stage": "final",
+  "reviewMode": "translation",
+  "sourceLang": "zh-CN",
+  "targetLang": "en-US",
+  "translationChain": "direct",
+  "steMode": "subset",
+  "unitPolicy": "verbatim",
+  "localizeItems": [],
+  "baseline": "《术语表》中英对照 v1.2；《规格表》2026-10 版；无认证文件",
+  "compare": "中文定稿 OM_ZH_v3.0.pdf（2026-10-28）",
+  "emptyChapters": [
+   "1. Vehicle Information"
+  ],
+  "srcReview": "源文 scan.py --lang zh：占位 18 页 / 空页 3 页 / 目录偏差 0 条（示例，按实际填）"
+ },
+ "items": [
+  {
+   "ch": "5. Instruments and Controls",
+   "sev": "严重",
+   "cat": "数值与单位",
+   "rule": "L1",
+   "loc": "第 38 页 / 5.13",
+   "quote": "Fuel reserve: 2.6 gal",
+   "srcLoc": "第 35 页 / 5.13",
+   "srcQuote": "燃油储备量：10 L",
+   "issue": "示例：源文 10 L，译文擅自换算为 2.6 gal。本项目口径为与源文逐字一致，换算本身即缺陷；且 2.6 gal 系 10 L 向下取整（实为 2.64 gal），取整方向无依据。",
+   "fix": "改回 Fuel reserve: 10 L（依据：源文第 35 页 5.13）。不得自行换算。",
+   "flag": "擅自换算",
+   "evidence": ""
+  },
+  {
+   "ch": "8. Safe Driving",
+   "sev": "严重",
+   "cat": "安全语与法规",
+   "rule": "L2",
+   "loc": "第 76 页 / 8.7",
+   "quote": "WARNING: It is recommended to keep the steering angle small.",
+   "srcLoc": "第 72 页 / 8.7",
+   "srcQuote": "警告：转向角度应尽量小，转向角度越大，翻车的可能性越大。",
+   "issue": "示例：源文为“警告”级且用“应”，译文保留 WARNING 但用 it is recommended，模态被软化，与分级不匹配。",
+   "fix": "改为 WARNING: Keep the steering angle small. A large steering angle increases the risk of rollover.（依据：源文第 72 页 8.7）",
+   "flag": "模态漂移"
+  },
+  {
+   "ch": "9. Maintenance",
+   "sev": "中等",
+   "cat": "数值与单位",
+   "rule": "L1",
+   "loc": "第 106 页 / 9.12",
+   "quote": "Tighten to 25 Nm.",
+   "srcLoc": "第 103 页 / 9.12",
+   "srcQuote": "拧紧至 25 N·m。",
+   "issue": "示例：单位写作 Nm，源文为 N·m。Nm 易与 nm（纳米）、mN（毫牛）混淆，属单位写法缺陷，不得按排版差异放过。",
+   "fix": "改为 25 N·m（依据：源文第 103 页 9.12）。",
+   "flag": "单位写法",
+   "evidence": ""
+  },
+  {
+   "ch": "9. Maintenance",
+   "sev": "轻微",
+   "cat": "目标语语言质量",
+   "rule": "L7",
+   "loc": "第 104 页 / 9.9",
+   "quote": "The radiator fan switches on or off automatically according to the coolant temperature.",
+   "srcLoc": "第 101 页 / 9.9",
+   "srcQuote": "散热器风扇会根据散热器中冷却液的温度自动打开或关闭。",
+   "issue": "示例：本条仅示范 srcLoc / srcQuote 的填写方式，译文本身无实质问题。语言质量类问题按章汇总、不逐条进主清单，此条不应照抄。",
+   "fix": "无需改动（示例占位）。",
+   "flag": ""
+  },
+  {
+   "ch": "9. Maintenance",
+   "sev": "中等",
+   "cat": "术语与用语一致性",
+   "rule": "L4",
+   "loc": "第 108 页 / 9.11 表",
+   "quote": "brake pad",
+   "srcLoc": "第 105 页 / 9.11 表",
+   "srcQuote": "制动片",
+   "issue": "示例：正文用 brake pad，保养表用 brake lining，同一部件两种译名。",
+   "fix": "统一为 brake pad（依据：《术语表》中英对照 v1.2 第 12 条）。",
+   "flag": ""
+  },
+  {
+   "ch": "11. Technical Specifications",
+   "sev": "中等",
+   "cat": "结构与导航",
+   "rule": "L6",
+   "loc": "第 130 页 / Index",
+   "quote": "Brake fluid  45, 67, 88",
+   "srcLoc": "第 122 页 / 索引",
+   "srcQuote": "制动液　45、67、88",
+   "issue": "示例：索引条目已按字母序重排，但页码沿用中文版，全部失效。",
+   "fix": "按译文实际页码重排全部索引条目。",
+   "flag": "系统性",
+   "evidence": "已渲染 p130 核对"
+  },
+  {
+   "ch": "10. Troubleshooting",
+   "sev": "偏离",
+   "cat": "STE 子集",
+   "rule": "S1",
+   "loc": "第 118 页 / 10.2",
+   "quote": "Before you start the engine, make sure that the vehicle is on level ground and that the parking brake is fully applied and that all passengers are seated.",
+   "srcLoc": "第 112 页 / 10.2",
+   "srcQuote": "起动发动机前，确认车辆处于水平地面、驻车制动已完全施加、所有乘员已就座。",
+   "issue": "示例：该句 31 词，超出程序性句 20 词上限（S1）。",
+   "fix": "拆为两句：Park the vehicle on level ground. Apply the parking brake fully, then start the engine.",
+   "flag": ""
+  }
+ ],
+ "top3": [
+  {
+   "t": "示例：索引页码全部沿用中文版",
+   "d": "检索功能整体失效，用户按索引找不到任何内容。",
+   "w": "影响：交付阻塞"
+  },
+  {
+   "t": "示例：警告级模态被软化",
+   "d": "源文“应”译成 it is recommended，风险提示强度下降。",
+   "w": "影响：安全隐患"
+  },
+  {
+   "t": "示例：数值被擅自换算",
+   "d": "源文 10 L 被译成 2.6 gal，既违反「与源文逐字一致」口径，换算本身还取整错误。",
+   "w": "影响：参数可信度"
+  }
+ ],
+ "srcIssues": [
+  {
+   "loc": "第 67 页 / 6.1.3",
+   "act": "必改",
+   "quote": "检查是否存在机油泄漏的情况。",
+   "issue": "6.1.3 标题为「变速箱机油」，检查项却写「机油泄漏」，与 6.1.2 重复，变速箱油泄漏项缺失。建议改为「检查是否存在变速箱油泄漏的情况」。"
+  },
+  {
+   "loc": "第 105 页 / 9.5.2",
+   "act": "建议",
+   "quote": "ºF　ºC",
+   "issue": "温度表单位用了阳序数符 º（U+00BA），应为度符号 °（U+00B0）；译文侧已用 °F/°C，源文需同步修正。"
+  },
+  {
+   "loc": "第 56 页 / 5.18",
+   "act": "待确认",
+   "quote": "月牙扳手",
+   "issue": "减震预载调节工具名需确认具体型式（钩形/月牙/专用扳手），工具名错会损坏调节器；确认后再定译文用词。"
+  }
+ ],
+ "suspects": [
+  {
+   "loc": "第 40 页 / 5.14.1",
+   "quote": "RON 92 or higher",
+   "note": "示例：源文第 36 页写“92 号及以上”，目标市场燃油标号体系需客户确认是否等价。"
+  }
+ ],
+ "accept": [
+  {
+   "no": "1",
+   "crit": "逐章扫描，每章均给出结论（无问题章节注明“未发现问题”）",
+   "res": "达标",
+   "note": "示例。"
+  },
+  {
+   "no": "2",
+   "crit": "每条问题均含译文摘录、源文摘录与两侧可定位页码",
+   "res": "达标",
+   "note": "示例。"
+  },
+  {
+   "no": "3",
+   "crit": "定级符合翻译版调整表，存疑项已单列",
+   "res": "达标",
+   "note": "示例。"
+  },
+  {
+   "no": "4",
+   "crit": "汇总齐全（数量/最高频/Top3/疑似/规范偏离）",
+   "res": "达标",
+   "note": "示例。"
+  },
+  {
+   "no": "5",
+   "crit": "未改写原文；修改建议均给出源文依据页码",
+   "res": "达标",
+   "note": "示例。"
+  },
+  {
+   "no": "6",
+   "crit": "全篇完整检查，未抽样",
+   "res": "存疑",
+   "note": "示例：图内标注文字未能逐一验证。"
+  },
+  {
+   "no": "7",
+   "crit": "版式与字符集类结论已目视复核",
+   "res": "达标",
+   "note": "示例。"
+  },
+  {
+   "no": "8",
+   "crit": "STE 仅按子集 6 条判定，未冒称全量合规",
+   "res": "达标",
+   "note": "示例：批准词词典未做校验，已在报告注明。"
+  },
+  {
+   "no": "9",
+   "crit": "数值与单位按 verbatim 口径核对，未给出换算值",
+   "res": "达标",
+   "note": "示例：单边项均要求改回源文值并标源文页码。"
+  }
+ ]
+}

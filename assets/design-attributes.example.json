@@ -1,0 +1,146 @@
+{
+  "_说明": "设计属性台账模板（只读示例，项目台账放工作目录 design-attributes.json）。用途：给「逻辑一致性」检查一个可比的基准。做法是审校方先按**封闭槽位**从被审文件里抽取（规格表／零件表／目录／图注优先），每格必须给出页码出处；抽不出的填 null 并标「未述及」，不得留空跳过。然后交客户只做「确认／更正」，不让客户从零填写。槽位清单是封闭的：加槽位要显式说明理由，否则漏项会以「没这一格」的形式静默发生。本文件只给结构与写法，value 一律留空——任何具体车型数据都不属于技能本体。exclusive 里的词族是判别线索，不是规则：命中只代表「需回原文核」，不得直接上报。非车辆类文档按同思路换槽位（如设备类：供电方式／控制方式／防护等级／安装方式）。",
+  "meta": {
+    "file": "被审文件名.pdf",
+    "extractedBy": "审校方（结构速读：规格表／零件表／目录／图注）",
+    "extractedAt": "YYYY-MM-DD",
+    "confirmedBy": "",
+    "confirmedAt": "",
+    "status": "draft",
+    "note": "status=draft 时逻辑一致性结论一律标「待客户复核」；客户确认后改 confirmed，方可进主清单。"
+  },
+  "slots": [
+    {
+      "id": "steering",
+      "name": "转向方式",
+      "value": null,
+      "config": "全系／分配置",
+      "class": "A",
+      "evidence": ["第 X 页 零件表 No.N", "第 Y 页 章节号"],
+      "exclusive": ["车把", "把手", "转把", "跨骑", "骑行", "riding", "身体倾斜转向", "handlebar"],
+      "confirmed": null,
+      "note": "填「方向盘／车把／操纵杆」之一。本槽位是「驾驶」这类词族冲突的判定基准：方向盘式写 riding 即互斥。"
+    },
+    {
+      "id": "transmission",
+      "name": "变速形式",
+      "value": null,
+      "config": "全系／分配置",
+      "class": "A",
+      "evidence": ["第 X 页 章节号", "第 Y 页 规格表 项名"],
+      "exclusive": ["离合踏板", "手动离合", "踩离合换挡", "clutch pedal"],
+      "confirmed": null,
+      "note": "填「CVT 自动／手动有级／AMT」并记挡序（如 P/R/N/L/H）。"
+    },
+    {
+      "id": "drive",
+      "name": "驱动与差速",
+      "value": null,
+      "config": "分市场",
+      "class": "B",
+      "evidence": ["第 X 页 驱动模式开关", "第 Y 页 规格表 项名"],
+      "exclusive": ["单驱", "无四驱", "常时四驱"],
+      "confirmed": null,
+      "note": "class B：差速锁常按市场区分（某市场前后锁、其他市场仅前锁），只有客户知道，不得自行推定。"
+    },
+    {
+      "id": "parkbrake",
+      "name": "驻车形式",
+      "value": null,
+      "config": "分配置",
+      "class": "B",
+      "evidence": ["第 X 页 驻车制动章节", "第 Y 页 规格表 项名"],
+      "exclusive": ["电子按键驻车与手柄操作混写", "手刹拉杆行程"],
+      "confirmed": null,
+      "note": "填「手柄／脚踏／电子 EPB」。常见形态：操作章节写手柄，规格表写高配电子 EPB——可能是分配置未标注，需人工核后再定级。"
+    },
+    {
+      "id": "seats",
+      "name": "座位与乘员数",
+      "value": null,
+      "config": "分车型",
+      "class": "A",
+      "evidence": ["第 X 页 座椅分布", "第 Y 页 规格表 载客数"],
+      "exclusive": ["与座位数不符的乘员数"],
+      "confirmed": null,
+      "note": "单排／双排各几座，逐车型写。"
+    },
+    {
+      "id": "seatbelt",
+      "name": "安全带型式",
+      "value": null,
+      "config": "全系",
+      "class": "A",
+      "evidence": ["第 X 页 安全带章节"],
+      "exclusive": ["两点式", "腰带式"],
+      "confirmed": null,
+      "note": ""
+    },
+    {
+      "id": "body",
+      "name": "车身开闭与车门",
+      "value": null,
+      "config": "分配置",
+      "class": "A",
+      "evidence": ["第 X 页 规格表 车身形式／车门"],
+      "exclusive": ["无风挡车型的安全带要求", "敞篷车顶"],
+      "confirmed": null,
+      "note": "同一本手册覆盖封闭与开放两种车身时，涉水、风挡、车门相关表述须逐条确认适用于哪种配置。"
+    },
+    {
+      "id": "cargo",
+      "name": "货箱型式",
+      "value": null,
+      "config": "全系",
+      "class": "A",
+      "evidence": ["第 X 页 货箱章节"],
+      "exclusive": ["固定货箱", "货箱不可倾卸"],
+      "confirmed": null,
+      "note": "填「倾卸式（记举升角）／固定式」。"
+    },
+    {
+      "id": "powersteering",
+      "name": "转向助力",
+      "value": null,
+      "config": "全系／分配置",
+      "class": "A",
+      "evidence": ["第 X 页 指示灯章节", "第 Y 页 规格表 项名"],
+      "exclusive": ["液压助力", "机械转向"],
+      "confirmed": null,
+      "note": "填「电子（DPS/EPS）／液压／机械」；故障指示灯描述须与型式一致。"
+    },
+    {
+      "id": "brake",
+      "name": "制动型式",
+      "value": null,
+      "config": "分市场",
+      "class": "B",
+      "evidence": ["第 X 页 规格表 项名", "第 Y 页 制动液章节"],
+      "exclusive": ["鼓式制动", "机械拉线制动"],
+      "confirmed": null,
+      "note": "class B：ABS／CBS 的适用市场需客户确认，影响制动章节的适用性判断。"
+    },
+    {
+      "id": "fuel",
+      "name": "燃油",
+      "value": null,
+      "config": "全系",
+      "class": "A",
+      "evidence": ["第 X 页 推荐燃油章节"],
+      "exclusive": ["柴油", "甲醇汽油"],
+      "confirmed": null,
+      "note": "填标号体系（RON／AKI）与乙醇上限。"
+    },
+    {
+      "id": "others",
+      "name": "其他配置件",
+      "value": null,
+      "config": "分配置",
+      "class": "B",
+      "evidence": ["第 X 页 规格表 Y/N 列"],
+      "exclusive": ["无该配置却出现操作章节"],
+      "confirmed": null,
+      "note": "绞盘、空调、副屏、车联网等按规格表 Y/N 列逐项记；无该配置却出现整节操作说明，属配置覆盖问题。"
+    }
+  ]
+}

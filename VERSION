@@ -1,0 +1,86 @@
+manual-review-checker  v1.7
+build-date: 2026-11-12
+source: 用户级技能正本（含 11-04 P1/P2/P3 修复、11-05 四轮改动、11-12 译文验收版、11-12 术语漂移与方向参数、11-12 逻辑一致性台账）
+supersedes: manual-review-checker v1.6 (2026-11-12)
+
+主要变更（相对 v1.6）:
+- 【语种】「中文单语版」全部改为「单语版」：单语审校不限语种（中文、英文、德文……），判据是
+  「有没有可对照的原文」，不是「是不是中文」。第 0 问、定级表、模板、README、安装说明同步
+- 【语种】scan.py 新增 --direction mono 的标签分流：单语版输出【单语版】而非【翻译版】，
+  「未提供 --source 中文定稿」改为「未提供 --source 对照版本」；--lang/--direction 帮助文本去掉中文限定
+- 【语种】SKILL.md 第 1 步补英文单语版调用示例：--lang en --direction mono（否则输出带翻译版标签，易误读）
+
+主要变更（相对 v1.5）:
+- 【问法】第 0 步第 0 问改为「中文是翻译稿，还是英文是翻译稿」——另一版即定稿。原先问「哪一版是定稿」，
+  答者容易把"定稿"理解成"最终确认的版本"而非"原文"，且需要二次换算才能推出方向
+- 【去重】第 3 问「对照版本」改为**仅中文单语版**问。译文版的定稿已由第 0 问确定，文件名与版本号由审校方
+  从文件本身登记（封面/页脚/PDF 元数据），不再向客户重复问一遍；仅当文件判不出版本时才回头确认一次
+- 【文档】checklist-translation.md 方向节同步改为「只问一句」，并写明不要问「哪版是定稿」
+
+主要变更（相对 v1.4）:
+- 【源文侧】新增 srcIssues[]（源文侧问题清单）：译文照译源文的错，客户拿到英文版照样有错；原先只在疑似清单
+  里一句带过，中文编辑看不到属于自己的活。现在单独出清单——报告第五节 + Excel「源文侧问题」工作表 +
+  汇总页一节，**不占译文三级统计**。每条 loc/act/quote/issue，act 取 必改/建议/待确认（与译文三级分开）
+- 【源文侧】meta.srcReview 记一行扫描依据（取 scan.py --lang zh 的占位/空页/目录偏差/字数异常）
+- 【源文侧】SKILL.md 第 5 步增字段说明；checklist-translation.md 横切节补「对照校对 ≠ 两侧都审过」
+  的三类漏项（错误被照译、译者改对反被判偏离、两侧一致但两侧都错）
+- 【源文侧】build.py 新增 build_src_sheet；report-template.html 新增第五节（无数据时整节隐藏，已回归验证）
+- 【源文侧】出件条件：源文还要再版才单列；源文已冻结、只改译文时，改为在对应条目 fix 写「源文需同步修订」
+
+主要变更（相对 v1.3）:
+- 【逻辑】新增第 0b 步「设计属性台账」：12 格**封闭槽位**（转向/变速/驱动/驻车/座位/安全带/车身/货箱/
+  转向助力/制动/燃油/其他配置件），每格必须带页码出处，抽不出填 null 标「未述及」不得留空跳过。
+  **审校方先抽初稿、客户只做确认/更正**——不让客户从零填（客户不会做也做不全，等于把漏项责任
+  转给最不可能发现漏项的一方）。class A 文档自证 / class B 只有客户知道（分市场、选装、法规差异）
+- 【逻辑】新增第 1c 步「逻辑一致性扫描」：**双通道**——正向（属性→文本，拿 exclusive 词族全篇搜）
+  与反向（高风险词族→回查属性，防台账漏项）。五类校验：设计属性互斥 / 施动者-装置 / 加总守恒 /
+  序列前置条件 / 模态强度。理由：这类缺陷不违反任何句子级规则（句法、编号、页码全对），
+  通读几乎必然漏，只能靠台账比对
+- 【逻辑】判定纪律三条：结论必须有文档内证据链（属性出处页 + 冲突表述页，三处互证）；无证据进疑似；
+  词族正确用法要保留（ride 表「乘坐」义合法），避免过度纠正
+- 【硬规则】新增第 13 条：逻辑结论须有文档内证据链；台账未出或 status=draft 未经复核时，
+  不得声称做过逻辑一致性检查，自评标「存疑」
+- 【自评】第 6 步增第 10 项：台账已出初稿且带页码、逻辑类均有证据链、台账已交客户复核
+- 【资产】新增 assets/design-attributes.example.json（只读模板，项目台账放工作目录）
+- 【文档】checklist.md 第 4 类「逻辑与内容矛盾」重写为可执行的五类校验 + 判定纪律；
+  checklist-translation.md 新增「横切：逻辑一致性（方向无关）」，并写明术语漂移与逻辑矛盾**不互相替代**
+  （全篇统一译错时 R1/R3 一个字都不报）；defect-patterns.md 新增第 9 类（八类→九类）
+- 【修复】report-template.html：筛选（严重程度/章节）后自动回到列表顶部。根因是列表整块重渲染触发
+  Chrome 滚动锚定，把程序化滚动又拉回去；改为 html{overflow-anchor:none} + 同步 scrollToList()。
+  真浏览器实测三条路径，改前停在 3839/6897/3558，改后均为列表顶（工具栏 54px + 8px）
+- 【文档】checklist-translation.md L6「发现方法」补索引条目差集做法（抽索引条目名与标题集合做差集
+  再人工判同义；实测一次查出 16 组不同源，通读只注意到 2–3 组）
+
+升级验收判据:
+1. 技能目录下只有一个 name: manual-review-checker 的 SKILL.md
+2. scripts/ 下 7 个 .py 齐全；assets/ 下 6 个文件、references/ 下 3 个文件齐全
+3. python scripts/check_env.py 返回 0
+4. 新开对话第 0 步问句含「文档性质与源语方向」，并提到 zh2en / en2zh；随后出设计属性台账初稿
+5. 中文单语版出件与 v1.1 一致（无源文列、无偏离档）；译文验收版出件含源文对照列
+6. zh2en 与 en2zh 各跑一遍 scan.py 均不报错，en2zh 时明确打印「STE 不适用」
+7. termdrift.py 在真实双语文档上 R1 标题可对齐率 > 90%，R3 能生成可填写的清单
+8. 报告页：任一严重程度按钮或章节下拉切换后，列表顶部回到筛选条下方（不回顶即为未达标）
+9. 译文版 data.json 含 srcIssues 时，报告出现第五节、Excel 多出「源文侧问题」工作表；不含时整节隐藏
+
+sha256 前 16 位（校验除 VERSION 外的全部文件）:
+  .gitignore                                   3c546bed4ca4d0eb
+  INSTALL-FOR-AGENT.md                         6098a79fb308b62a
+  README.md                                    16fb1a43e6210d42
+  SKILL.md                                     11f8f078f761ebdb
+  assets/design-attributes.example.json        bb8b412ddb935b6f
+  assets/do-not-translate.json                 9167560174111757
+  assets/report-data.example.json              2aeacac7966fee61
+  assets/report-data.translation.example.json  05b513d5e8bdd27a
+  assets/report-template.html                  dab0ebe74090aa37
+  assets/terms.json                            a304ff5a985c8919
+  references/checklist-translation.md          7c04fc4e4813bd58
+  references/checklist.md                      0e7db1296f156fac
+  references/defect-patterns.md                be16d0c749104a03
+  scripts/_common.py                           409ed88a502cf9b8
+  scripts/build.py                             5dd6ada7bb82cc2d
+  scripts/check_env.py                         7dcf6d64828b6b96
+  scripts/render.py                            84b87bf532f9ae72
+  scripts/scan.py                              4181b77eacbad1e7
+  scripts/termdrift.py                         b8a0c28e67d7cdf1
+  scripts/validate.py                          d891808af26c5418
+  安装与使用说明.md                                   1019f03d1fb5ead3

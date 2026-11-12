@@ -27,9 +27,10 @@ from openpyxl.utils import get_column_letter
 HERE = os.path.dirname(os.path.abspath(__file__))
 TEMPLATE = os.path.join(os.path.dirname(HERE), 'assets', 'report-template.html')
 
-SEV_ORDER = ['严重', '中等', '轻微', '待补']
+SEV_ORDER = ['严重', '中等', '轻微', '待补', '偏离']
 SEV_FILL = {
-    '严重': 'FDE8E6', '中等': 'FDF3E0', '轻微': 'EAF0F8', '待补': 'F1F2F4',
+    '严重': 'FDE8E6', '中等': 'FDF3E0', '轻微': 'EAF0F8',
+    '待补': 'F1F2F4', '偏离': 'F0EBF7',
 }
 # 中文报告字体；跨平台（macOS/Linux）部署时改为目标系统可用的中文字体，如 'PingFang SC' / 'Noto Sans CJK SC'
 FONT_NAME = '微软雅黑'
@@ -39,16 +40,49 @@ BODY_FONT = Font(name=FONT_NAME, size=10)
 THIN = Side(style='thin', color='D9DDE3')
 BORDER = Border(left=THIN, right=THIN, top=THIN, bottom=THIN)
 
-COLS = [
-    ('序号', 6, 'id'),
-    ('章节', 24, 'ch'),
-    ('严重程度', 10, 'sev'),
-    ('问题类别', 18, 'cat'),
-    ('原文位置', 18, 'loc'),
-    ('原文摘录', 42, 'quote'),
-    ('问题说明', 52, 'issue'),
-    ('修改建议', 42, 'fix'),
+# (表头, 列宽, 字段, 是否自动换行)
+COLS_MONO = [
+    ('序号', 6, 'id', False),
+    ('章节', 24, 'ch', True),
+    ('严重程度', 10, 'sev', False),
+    ('问题类别', 18, 'cat', True),
+    ('原文位置', 18, 'loc', True),
+    ('原文摘录', 42, 'quote', True),
+    ('问题说明', 52, 'issue', True),
+    ('修改建议', 42, 'fix', True),
+    ('复核证据', 20, 'evidence', True),
 ]
+
+COLS_TRANS = [
+    ('序号', 6, 'id', False),
+    ('章节', 20, 'ch', True),
+    ('严重程度', 9, 'sev', False),
+    ('问题类别', 16, 'cat', True),
+    ('规则', 7, 'rule', False),
+    ('译文位置', 15, 'loc', True),
+    ('译文摘录', 34, 'quote', True),
+    ('源文位置', 13, 'srcLoc', True),
+    ('源文原文', 30, 'srcQuote', True),
+    ('问题说明', 40, 'issue', True),
+    ('修改建议', 34, 'fix', True),
+    ('复核证据', 14, 'evidence', True),
+]
+
+CENTER_KEYS = ('id', 'sev', 'rule')
+
+# 源文侧问题（改定稿用，不计入译文三级统计）
+SRC_COLS = [
+    ('序号', 6, 'id', False),
+    ('源文位置', 18, 'loc', True),
+    ('处理', 10, 'act', False),
+    ('源文摘录', 40, 'quote', True),
+    ('问题与建议', 60, 'issue', True),
+]
+SRC_FILL = {'必改': 'FDE8E6', '建议': 'FDF3E0', '待确认': 'F1F2F4'}
+
+
+def is_trans(data):
+    return data.get('meta', {}).get('reviewMode') == 'translation'
 
 
 def text_width(s):
@@ -64,7 +98,74 @@ def est_height(values, widths):
     return min(max(lines * 15 + 4, 20), 200)
 
 
+EVIDENCE_CATS = ('版式', '编号', '断句', '表格对齐', '图注', '目录', '格式')
+
+
+def warn_evidence(items):
+    """版式/结构类条目缺复核证据时只打印警告，不阻断出件。"""
+    need = [it for it in items
+            if any(k in str(it.get('cat', '')) for k in EVIDENCE_CATS)]
+    missing = [it for it in need if not str(it.get('evidence', '')).strip()]
+    if missing:
+        print('警告：%d 条版式/结构类条目缺少复核证据（evidence），已照常出件，请在自评中标“存疑”。'
+              % len(missing))
+        for it in missing[:10]:
+            print('  - %s  %s' % (it.get('loc', ''), it.get('cat', '')))
+        if len(missing) > 10:
+            print('  … 其余 %d 条见 data.json' % (len(missing) - 10))
+    elif need:
+        print('复核证据：%d 条版式/结构类条目均已填写。' % len(need))
+    return len(missing)
+
+
 # ---------------- Excel ----------------
+def build_src_sheet(wb, data):
+    """源文侧问题单独一页：给中文编辑改定稿用，不与译文三级统计混在一起。"""
+    src = data.get('srcIssues', [])
+    if not src:
+        return None
+    ws = wb.create_sheet('源文侧问题')
+    meta = data.get('meta', {})
+    n = len(SRC_COLS)
+    ws.merge_cells(start_row=1, start_column=1, end_row=1, end_column=n)
+    t = ws.cell(row=1, column=1,
+                value='源文侧问题（改定稿用，不计入译文三级统计）　%s' % meta.get('srcReview', ''))
+    t.font = Font(name=FONT_NAME, size=12, bold=True)
+    t.alignment = Alignment(vertical='center')
+    ws.row_dimensions[1].height = 26
+
+    for i, (name, width, _, _) in enumerate(SRC_COLS, start=1):
+        c = ws.cell(row=2, column=i, value=name)
+        c.fill, c.font, c.border = HEAD_FILL, HEAD_FONT, BORDER
+        c.alignment = Alignment(horizontal='center', vertical='center')
+        ws.column_dimensions[get_column_letter(i)].width = width
+    ws.row_dimensions[2].height = 22
+
+    widths = [w for _, w, _, _ in SRC_COLS]
+    r = 3
+    for i, it in enumerate(src, start=1):
+        vals = []
+        for _, _, key, _ in SRC_COLS:
+            vals.append(i if key == 'id' else it.get(key, ''))
+        for j, (v, (_, _, key, wrap)) in enumerate(zip(vals, SRC_COLS), start=1):
+            c = ws.cell(row=r, column=j, value=v)
+            c.font, c.border = BODY_FONT, BORDER
+            c.alignment = Alignment(vertical='top', wrap_text=wrap,
+                                    horizontal='center' if key in ('id', 'act') else 'left')
+        fill = SRC_FILL.get(it.get('act', ''))
+        if fill:
+            ws.cell(row=r, column=3).fill = PatternFill('solid', fgColor=fill)
+        ws.row_dimensions[r].height = est_height(vals, widths)
+        r += 1
+
+    ws.freeze_panes = 'A3'
+    ws.auto_filter.ref = 'A2:%s%d' % (get_column_letter(n), r - 1)
+    ws.page_setup.orientation = 'landscape'
+    ws.page_setup.fitToWidth = 1
+    ws.sheet_properties.pageSetUpPr.fitToPage = True
+    return ws
+
+
 def build_xlsx(data, path):
     wb = Workbook()
     ws = wb.active
@@ -72,47 +173,55 @@ def build_xlsx(data, path):
 
     meta = data.get('meta', {})
     items = data.get('items', [])
+    trans = is_trans(data)
+    COLS = COLS_TRANS if trans else COLS_MONO
 
     # 标题行（合并）
     ws.merge_cells(start_row=1, start_column=1, end_row=1, end_column=len(COLS))
-    t = ws.cell(row=1, column=1, value='%s　（%s，%s）' % (
-        meta.get('title', '审校问题清单'),
-        '终稿' if meta.get('stage') == 'final' else '中途版',
-        meta.get('date', '')))
+    sub = '%s，%s' % ('终稿' if meta.get('stage') == 'final' else '中途版', meta.get('date', ''))
+    if trans:
+        sub = '%s→%s，%s' % (meta.get('sourceLang', 'zh-CN'),
+                             meta.get('targetLang', 'en-US'), sub)
+    t = ws.cell(row=1, column=1, value='%s　（%s）' % (meta.get('title', '审校问题清单'), sub))
     t.font = Font(name=FONT_NAME, size=12, bold=True)
     t.alignment = Alignment(vertical='center')
     ws.row_dimensions[1].height = 26
 
     # 表头
     hr = 2
-    for i, (name, width, _) in enumerate(COLS, start=1):
+    for i, (name, width, _, _) in enumerate(COLS, start=1):
         c = ws.cell(row=hr, column=i, value=name)
         c.fill, c.font, c.border = HEAD_FILL, HEAD_FONT, BORDER
         c.alignment = Alignment(horizontal='center', vertical='center')
         ws.column_dimensions[get_column_letter(i)].width = width
     ws.row_dimensions[hr].height = 22
 
-    widths = [w for _, w, _ in COLS]
+    widths = [w for _, w, _, _ in COLS]
+    sev_col = [k for _, _, k, _ in COLS].index('sev') + 1
     r = hr + 1
     for i, it in enumerate(items, start=1):
-        row = [i, it.get('ch', ''), it.get('sev', ''), it.get('cat', ''),
-               it.get('loc', ''), it.get('quote', ''), it.get('issue', ''), it.get('fix', '')]
-        if it.get('flag'):
-            row[6] = '%s（%s）' % (row[6], it['flag'])
-        for j, v in enumerate(row, start=1):
+        row = []
+        for _, _, key, _ in COLS:
+            if key == 'id':
+                row.append(i)
+            elif key == 'issue' and it.get('flag'):
+                row.append('%s（%s）' % (it.get('issue', ''), it['flag']))
+            else:
+                row.append(it.get(key, ''))
+        for j, (v, (_, _, key, wrap)) in enumerate(zip(row, COLS), start=1):
             c = ws.cell(row=r, column=j, value=v)
             c.font, c.border = BODY_FONT, BORDER
-            c.alignment = Alignment(vertical='top', wrap_text=(j >= 6),
-                                    horizontal='center' if j in (1, 3) else 'left')
+            c.alignment = Alignment(vertical='top', wrap_text=wrap,
+                                    horizontal='center' if key in CENTER_KEYS else 'left')
         sev = it.get('sev', '')
         if sev in SEV_FILL:
-            ws.cell(row=r, column=3).fill = PatternFill('solid', fgColor=SEV_FILL[sev])
+            ws.cell(row=r, column=sev_col).fill = PatternFill('solid', fgColor=SEV_FILL[sev])
         ws.row_dimensions[r].height = est_height(row, widths)
         r += 1
 
     ws.freeze_panes = 'A3'
     if r > hr + 1:
-        ws.auto_filter.ref = 'A%d:H%d' % (hr, r - 1)
+        ws.auto_filter.ref = 'A%d:%s%d' % (hr, get_column_letter(len(COLS)), r - 1)
     ws.page_setup.orientation = 'landscape'
     ws.page_setup.fitToWidth = 1
     ws.sheet_properties.pageSetUpPr.fitToPage = True
@@ -140,33 +249,69 @@ def build_xlsx(data, path):
         s.row_dimensions[row].height = est_height([a, b], [26, 96])
         return row + 1
 
+    order = SEV_ORDER if trans else SEV_ORDER[:4]
     cnt = {k: 0 for k in SEV_ORDER}
     for it in items:
         if it.get('sev') in cnt:
             cnt[it['sev']] += 1
 
+    CN = '一二三四五六七八九十'
+    no = [0]
+
+    def num_head(title):
+        no[0] += 1
+        return '%s、%s' % (CN[no[0] - 1], title)
+
     row = 1
-    row = head(row, '一、各级数量')
-    for k in SEV_ORDER:
+    row = head(row, num_head('各级数量'))
+    for k in order:
         row = line(row, k, cnt[k])
     row = line(row, '合计', len(items), bold=True)
 
     row += 1
-    row = head(row, '二、问题类别分布')
+    row = head(row, num_head('问题类别分布'))
     cat = {}
     for it in items:
         cat[it.get('cat', '未分类')] = cat.get(it.get('cat', '未分类'), 0) + 1
     for k, v in sorted(cat.items(), key=lambda x: -x[1]):
         row = line(row, k, '%d 条（%.1f%%）' % (v, v / max(len(items), 1) * 100))
 
+    if trans:
+        row += 1
+        row = head(row, num_head('检查层面分布（L1–L8 / STE 子集）'))
+        layer = {}
+        for it in items:
+            k = str(it.get('rule', '')).strip() or '未标注'
+            layer[k] = layer.get(k, 0) + 1
+        for k, v in sorted(layer.items()):
+            row = line(row, k, '%d 条' % v)
+
+        row += 1
+        row = head(row, num_head('规范偏离统计（STE 子集，非错误，不占三级）'))
+        ste = [it for it in items if it.get('sev') == '偏离']
+        if ste:
+            for it in ste:
+                row = line(row, 'S%s　%s' % (it.get('rule', '').lstrip('S') or '-', it.get('loc', '')),
+                           '%s｜%s' % (it.get('quote', ''), it.get('issue', '')))
+        else:
+            row = line(row, '无', '未检出 STE 子集偏离，或本次未启用 steMode。')
+
+        loc_items = meta.get('localizeItems') or []
+        if loc_items:
+            row += 1
+            row = head(row, num_head('参数本地化例外清单（清单外一律按与源文不一致报）'))
+            for x in loc_items:
+                row = line(row, x.get('item', ''),
+                           '依据：%s｜批准：%s' % (x.get('basis', '—'), x.get('approvedBy', '—')))
+
     row += 1
-    row = head(row, '三、最需优先处理的 3 个问题')
+    row = head(row, num_head('最需优先处理的 3 个问题'))
     for i, c in enumerate(data.get('top3', []), start=1):
         row = line(row, '%d. %s' % (i, c.get('t', '')), '%s　%s' % (c.get('d', ''), c.get('w', '')), bold=True)
 
     pending = [it for it in items if it.get('sev') == '待补']
     row += 1
-    row = head(row, '四、待补资料清单（等客户提供后即可消除）')
+    row = head(row, num_head('待补资料清单（等客户提供后即可消除）'))
     if pending:
         for i, it in enumerate(pending, start=1):
             row = line(row, 'B%d　%s' % (i, it.get('loc', '')), '%s｜%s' % (it.get('quote', ''), it.get('issue', '')))
@@ -174,7 +319,7 @@ def build_xlsx(data, path):
         row = line(row, '无', '终稿或资料已齐。')
 
     row += 1
-    row = head(row, '五、疑似问题清单（需人工复核）')
+    row = head(row, num_head('疑似问题清单（需人工复核）'))
     sus = data.get('suspects', [])
     if sus:
         for i, x in enumerate(sus, start=1):
@@ -183,9 +328,27 @@ def build_xlsx(data, path):
         row = line(row, '无', '')
 
     row += 1
-    row = head(row, '六、验收标准自评')
+    row = head(row, num_head('源文侧问题清单（改定稿用，不计入译文三级统计）'))
+    src = data.get('srcIssues', [])
+    if src:
+        cnt = {}
+        for x in src:
+            cnt[x.get('act', '待确认')] = cnt.get(x.get('act', '待确认'), 0) + 1
+        row = line(row, '合计 %d 条' % len(src),
+                   '　'.join('%s %d' % (k, cnt[k]) for k in ('必改', '建议', '待确认') if k in cnt)
+                   + '｜%s' % meta.get('srcReview', ''))
+        for i, x in enumerate(src, start=1):
+            row = line(row, 'Z%d　%s' % (i, x.get('loc', '')),
+                       '【%s】%s｜%s' % (x.get('act', ''), x.get('quote', ''), x.get('issue', '')))
+    else:
+        row = line(row, '无', '未对源文单独检查（单语版，或未启用源文侧清单）。')
+
+    row += 1
+    row = head(row, num_head('验收标准自评'))
     for a in data.get('accept', []):
         row = line(row, '%s　%s' % (a.get('no', ''), a.get('crit', '')), '%s　%s' % (a.get('res', ''), a.get('note', '')))
+
+    build_src_sheet(wb, data)
 
     try:
         wb.save(path)
@@ -222,8 +385,46 @@ def main():
         data = json.load(f)
 
     meta = data.get('meta', {})
+    trans = is_trans(data)
+    warn_evidence(data.get('items', []))
     if meta.get('stage') not in ('final', 'interim'):
         print('警告：meta.stage=%r 不合法（应为 final 或 interim），已按"中途版"处理。' % meta.get('stage'))
+    if trans:
+        if not meta.get('targetLang'):
+            print('警告：reviewMode=translation 但未填 meta.targetLang，报告中按 en-US 显示。')
+        d = meta.get('direction')
+        if d not in ('zh2en', 'en2zh'):
+            print('警告：reviewMode=translation 但 meta.direction 缺失或不合法'
+                  '（应为 zh2en 或 en2zh）——方向决定 fix 落点与 verbatim 保护对象，'
+                  '未声明时报告读者无法判断该改哪一版。')
+        else:
+            sl, tl = meta.get('sourceLang', ''), meta.get('targetLang', '')
+            if sl[:2] == tl[:2]:
+                print('警告：direction=%s 但 sourceLang 与 targetLang 相同（%s / %s）。' % (d, sl, tl))
+            elif d == 'zh2en' and not sl.lower().startswith('zh'):
+                print('提示：direction=zh2en，但 sourceLang=%r 不是中文，请复核方向。' % sl)
+            elif d == 'en2zh' and not sl.lower().startswith('en'):
+                print('提示：direction=en2zh，但 sourceLang=%r 不是英文，请复核方向。' % sl)
+        if d == 'en2zh':
+            stray_ste = [it for it in data.get('items', []) if it.get('rule') in
+                         ('S1', 'S2', 'S3', 'S4', 'S5', 'S6')]
+            if stray_ste:
+                print('警告：direction=en2zh（目标语非英文），但存在 %d 条 STE 条目——'
+                      'STE 仅适用于英文目标语，应删除。' % len(stray_ste))
+            if meta.get('steMode') not in (None, 'off'):
+                print('提示：direction=en2zh 时 meta.steMode 应为 off。')
+        miss_src = [it for it in data.get('items', []) if not str(it.get('srcQuote', '')).strip()]
+        if miss_src:
+            print('警告：%d 条翻译版条目缺少源文原文（srcQuote），回改方无法核对依据。' % len(miss_src))
+        up = meta.get('unitPolicy', 'verbatim')
+        if up not in ('verbatim', 'localize'):
+            print('警告：meta.unitPolicy=%r 不合法（应为 verbatim 或 localize），已按 verbatim 处理。' % up)
+        elif up == 'localize' and not meta.get('localizeItems'):
+            print('提示：unitPolicy=localize，但 localizeItems 为空——全篇按换算口径判定，请确认客户已书面要求。')
+    else:
+        stray = [it for it in data.get('items', []) if it.get('sev') == '偏离']
+        if stray:
+            print('警告：%d 条 sev=偏离 但 reviewMode 不是 translation，“偏离”档仅在翻译版使用。' % len(stray))
     outdir = args.outdir or os.path.dirname(os.path.abspath(args.data))
     os.makedirs(outdir, exist_ok=True)
     name = args.name or re.sub(r'\.(pdf|docx?|indd)$', '', os.path.basename(meta.get('file', '文档')), flags=re.I)
