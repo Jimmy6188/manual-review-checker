@@ -52,7 +52,7 @@
 ### 5. 校验
 
 - 目标路径下 `manual-review-checker/SKILL.md` 存在
-- `manual-review-checker/scripts/` 下 6 个脚本齐全：`build.py`、`scan.py`、`render.py`、`check_env.py`、`validate.py`、`_common.py`
+- `manual-review-checker/scripts/` 下 7 个脚本齐全：`build.py`、`scan.py`、`render.py`、`check_env.py`、`validate.py`、`termdrift.py`、`_common.py`
 - `manual-review-checker/assets/` 下 `report-template.html`、`report-data.example.json`、`report-data.translation.example.json`、`terms.json`、`do-not-translate.json`、`design-attributes.example.json` 齐全；`references/` 下 `checklist.md`、`checklist-translation.md`、`defect-patterns.md` 齐全
 - `manual-review-checker/VERSION` 存在，且版本号、日期与本压缩包内 `VERSION` 逐字一致；按 VERSION 的哈希清单抽查 2–3 个关键文件（`SKILL.md`、`scripts/scan.py`、`assets/report-template.html`）
 - 技能目录下没有第二个含 `SKILL.md` 且 `name: manual-review-checker` 的目录（含任何 `.bak-*`）
@@ -69,16 +69,41 @@
 
 ### 6. 报告
 
-用 4–6 行告诉用户：
+分两段：先说装在哪、能不能用；再说**这次更新了什么**。
+
+**第一段：安装结果（4–6 行）**
 
 1. 装到了哪个目录（完整路径）
 2. 判断依据（为什么是这个目录）
 3. VERSION 版本号与旧版去向（升级场景必报备份路径）
 4. 环境自检结果（就绪 / 缺哪个包）
-5. 需要重启客户端才生效；重开后让 AI 加载技能，第 0 步问句应含「除《术语表》《规格表》外，是否还有其他可用作判定基准的资料」并提到工作目录 `terms.json`，以此确认跑的不是旧备份
+5. 需要重启客户端才生效；重开后让 AI 加载技能，第 0 步应先问「单语版还是译文验收版」（译文版再问「中文是翻译稿还是英文是翻译稿」），随后出设计属性台账初稿——以此确认跑的不是旧备份
 6. 升级场景另报：自定义词表是否已迁移及其新路径
 
-不要罗列文件清单，不要复述本文件内容。
+**第二段：更新内容（升级场景必做，首次安装可省）**
+
+读包内 `CHANGELOG.md`，找出**从用户旧版到当前版之间**的所有版本段落，按「你能感知到什么」转述。要求：
+
+- 用使用者语言，不用提交语言。写「报告筛选后会自动回到列表顶部」，不写「修 overflow-anchor 与 scrollToList」。
+- 只讲对他有影响的变化，最多 5 条；细节让他自己看 CHANGELOG，不要全文粘贴。
+- 明确标注哪条会**改变他的操作习惯**（例如"第 0 步问法变了""多了一份源文侧清单要转给中文编辑"），这类放在最前。
+- 末尾给一行：完整记录见 `manual-review-checker/CHANGELOG.md`。
+
+汇报模板（按实际改动增删）：
+
+```
+装好了：<路径>（旧版已备份到 <路径>）
+
+本次更新要点：
+1. <最影响操作的一条>
+2. <新增能力>
+3. <修掉的问题>
+完整记录见 manual-review-checker/CHANGELOG.md
+
+需要重启客户端；重开后第一次审校，第 0 步问句会和以前不一样（见上）。
+```
+
+不要罗列文件清单，不要复述本文件内容，不要报 commit 号。
 
 ### 7. 失败处理
 

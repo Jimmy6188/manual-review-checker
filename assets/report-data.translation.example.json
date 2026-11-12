@@ -8,6 +8,7 @@
   "date": "2026-11-12",
   "stage": "final",
   "reviewMode": "translation",
+  "direction": "zh2en",
   "sourceLang": "zh-CN",
   "targetLang": "en-US",
   "translationChain": "direct",
